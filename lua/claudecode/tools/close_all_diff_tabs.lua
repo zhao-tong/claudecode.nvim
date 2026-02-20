@@ -13,6 +13,12 @@ local schema = {
 ---Closes all diff tabs/windows in the editor.
 ---@return table response MCP-compliant response with content array indicating number of closed tabs.
 local function handler(params)
+  -- Clean up all tracked diff state first (handles both standard and inline diffs)
+  local diff_ok, diff_module = pcall(require, "claudecode.diff")
+  if diff_ok then
+    diff_module._cleanup_all_active_diffs("closeAllDiffTabs")
+  end
+
   local closed_count = 0
 
   -- Get all windows
@@ -27,6 +33,12 @@ local function handler(params)
 
     -- Check if this is a diff window
     if diff_mode then
+      should_close = true
+    end
+
+    -- Check for inline diff buffers
+    local is_inline = vim.b[buf].claudecode_inline_diff
+    if is_inline then
       should_close = true
     end
 
